@@ -1,2 +1,2 @@
-from .lion import Lion, lion
+from .lion import Lion
 
