@@ -5,7 +5,7 @@ This repository contains an implementation of the **Lion optimizer** (EvoLved Si
 ## Introduction
 The Lion optimizer is a simple yet powerful optimization algorithm that uses sign-based updates instead of traditional gradient-based updates. It is designed to be memory-efficient and computationally lightweight, making it suitable for large-scale machine learning tasks.
 
-This implementation provides a PyTorch-compatible version of the Lion optimizer, along with examples demonstrating its usage in training neural networks.
+This implementation provides a PyTorch-compatible version of the Lion optimizer.
 
 ## A Pseudocode for Lion
 $$
