@@ -8,21 +8,9 @@ Lion uses sign-based updates instead of traditional gradient-based updates, inte
 
 The core update rule is as follows:
 
-$$
-\begin{aligned}
-&\mathbf{given}\ \beta_1,\beta_2,\lambda,\eta,f\\
-&\mathbf{initialize}\ \theta_0,m_0\leftarrow 0\\
-&\mathbf{while}\ \theta_t\ \text{not converged}\ \mathbf{do}\\
-&\qquad g_t\leftarrow \nabla_\theta f(\theta_{t-1})\\
-&\qquad\mathbf{update\ model\ parameters}\\
-&\qquad c_t\leftarrow \beta_1 m_{t-1}+(1-\beta_1)g_t\\
-&\qquad \theta_t\leftarrow \theta_{t-1}-\eta(\mathrm{sign}(c_t)+\lambda \theta_{t-1})\\
-&\qquad\mathbf{update\ EMA\ of}\  g_t\\
-&\qquad m_t\leftarrow \beta_2 m_{t-1}+(1-\beta_2)g_t\\
-&\mathbf{end\ while}\\
-&\mathbf{return}\ \theta_t\\
-\end{aligned}
-$$
+<p align="center">
+    <img src="../assets/lion_algorithm.png" alt="Project Image" width="80%">
+</p>
 
 Where:
 - $\beta_1$ and $\beta_2$ are momentum coefficients,
