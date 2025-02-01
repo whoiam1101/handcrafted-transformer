@@ -45,7 +45,7 @@ class Decoder(nn.Module):
             DecoderLayer(d_model, num_heads, d_ff, dropout)
             for _ in range(num_layers)
         ])
-        self.norm = nn.LayerNomr(d_model)
+        self.norm = nn.LayerNorm(d_model)
         self.final_layer = nn.Linear(d_model)
 
     def forward(self, tgt, encoder_out, src_mask, tgt_mask):
