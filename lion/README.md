@@ -25,9 +25,9 @@ $$
 $$
 
 Where:
-- \( \beta_1 \) and \( \beta_2 \) are momentum coefficients,
-- \( \lambda \) is a regularization parameter,
-- \( \eta \) is the learning rate.
+- $\beta_1$ and $\beta_2$ are momentum coefficients,
+- $\lambda$ is a regularization parameter,
+- $\eta$ is the learning rate.
 
 ## Features
 - Sign-based updates for improved efficiency.
