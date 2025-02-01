@@ -1,2 +1,2 @@
-from .lion_optimizer import Lion, lion
+from .lion import Lion, lion
 
