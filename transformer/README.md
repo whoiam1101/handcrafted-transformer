@@ -8,7 +8,7 @@ This project is a handcrafted implementation of the Transformer architecture.
 
 ## Transformer Architecture
 
-![Transformer Architecture](https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Attention_Mechanism.png/800px-Attention_Mechanism.png)
+![Transformer Architecture](https://upload.wikimedia.org/wikipedia/commons/3/34/Transformer%2C_full_architecture.png)
 
 The Transformer model architecture includes the following components:
 - **Encoder**: Processes the input sequence.
