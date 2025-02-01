@@ -80,6 +80,7 @@ class Transformer(nn.Module):
 
 Transformer.__doc__ = """
 Transformer model for sequence-to-sequence tasks.
+
 Args:
     num_layers (int): Number of layers in the encoder and decoder.
     d_model (int): Dimensionality of the model.
@@ -89,9 +90,11 @@ Args:
     output_dim (int): Dimensionality of the output.
     max_len (int, optional): Maximum length of the input sequences. Default is 5000.
     dropout (float, optional): Dropout rate. Default is 0.2.
+
 Attributes:
     encoder (Encoder): Encoder part of the transformer.
     decoder (Decoder): Decoder part of the transformer.
+
 Methods:
     forward(src, tgt, src_mask=None, tgt_mask=None):
         Forward pass through the transformer.
@@ -102,6 +105,7 @@ Methods:
             tgt_mask (Tensor, optional): Target mask tensor. Default is None.
         Returns:
             Tensor: Output tensor from the decoder.
+
     predict(src, max_len, sos_token=2, eos_token=3):
         Generate predictions for the given source input.
         Args:
