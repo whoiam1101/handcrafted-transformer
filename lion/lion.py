@@ -66,3 +66,22 @@ class Lion(Optimizer):
             torch._foreach_add_(exp_avgs, grad_part)
 
         return loss
+
+
+Lion.__doc__ = """
+Lion optimizer for training neural networks.
+
+Args:
+    params (ParamsT): Parameters to optimize.
+    lr (float | Tensor, optional): Learning rate. Default is 1e-4.
+    betas (tuple[float | Tensor, float | Tensor], optional): Coefficients used for computing running averages of gradient and its square. Default is (0.9, 0.999).
+    weight_decay (float, optional): Weight decay (L2 penalty). Default is 0.0.
+
+Methods:
+    step(closure: callable | None = None) -> float | None:
+        Performs a single optimization step.
+        Args:
+            closure (callable, optional): A closure that reevaluates the model and returns the loss. Default is None.
+        Returns:
+            float | None: The loss value if closure is provided, otherwise None.
+"""
