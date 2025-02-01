@@ -23,11 +23,3 @@ $$
 &\mathbf{return}\ \theta_t\\
 \end{aligned}
 $$
-
-## Installation
-To use the Lion optimizer, clone this repository and install the required dependencies.
-
-```bash
-git clone https://github.com/whoiam1101/lion-optimizer.git
-cd lion-optimizer
-pip install -r requirements.txt
