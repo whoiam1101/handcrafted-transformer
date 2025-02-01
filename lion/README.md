@@ -9,7 +9,7 @@ Lion uses sign-based updates instead of traditional gradient-based updates, inte
 The core update rule is as follows:
 
 <p align="center">
-    <img src="../assets/lion_algorithm.png" alt="Project Image" width="80%">
+    <img src="../assets/lion_algorithm.png" alt="Project Image" width="100%">
 </p>
 
 Where:
