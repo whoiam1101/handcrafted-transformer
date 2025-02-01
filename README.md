@@ -1,4 +1,4 @@
 # 🔥 TitanForge 🔧
 <p align="center">
-    <img src="assets/TitanForge.jpeg" alt="Project Image" width="50%">
+    <img src="assets/TitanForge.jpeg" alt="Project Image" width="25%">
 </p>
