@@ -1,11 +1,7 @@
 import torch
 
 from torch import Tensor
-from torch.optim.optimizer import (
-    Optimizer,
-    ParamsT,
-    _use_grad_for_differentiable
-)
+from torch.optim.optimizer import Optimizer, ParamsT, _use_grad_for_differentiable
 
 
 __all__ = ["Lion"]
@@ -17,7 +13,7 @@ class Lion(Optimizer):
         params: ParamsT,
         lr: float | Tensor = 1e-4,
         betas: tuple[float | Tensor, float | Tensor] = (0.9, 0.999),
-        weight_decay: float = 0.0
+        weight_decay: float = 0.0,
     ):
         defaults = dict(lr=lr, betas=betas, weight_decay=weight_decay)
         super().__init__(params, defaults)
@@ -35,9 +31,9 @@ class Lion(Optimizer):
             params_with_grad = []
             grads = []
             exp_avgs = []
-            beta1, beta2 = group['betas']
-            lr = group['lr']
-            weight_decay = group['weight_decay']
+            beta1, beta2 = group["betas"]
+            lr = group["lr"]
+            weight_decay = group["weight_decay"]
             decay_factor = 1.0 - lr * weight_decay
 
             for p in group["params"]:
@@ -46,9 +42,11 @@ class Lion(Optimizer):
                 params_with_grad.append(p)
                 grads.append(p.grad)
                 state = self.state[p]
-                if 'exp_avg' not in state:
-                    state['exp_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)
-                exp_avgs.append(state['exp_avg'])
+                if "exp_avg" not in state:
+                    state["exp_avg"] = torch.zeros_like(
+                        p, memory_format=torch.preserve_format
+                    )
+                exp_avgs.append(state["exp_avg"])
 
             if not params_with_grad:
                 continue
