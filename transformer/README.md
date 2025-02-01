@@ -1,4 +1,4 @@
-# Handcrafted Transformer
+# Handcrafted Transformer 🤖
 
 This project is a handcrafted implementation of the Transformer architecture.
 
