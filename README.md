@@ -1,2 +1,2 @@
 # 🔥 TitanForge 🔧
-![Project Image](assets/TitanForge.png)
+![Project Image](assets/TitanForge.jpeg)
