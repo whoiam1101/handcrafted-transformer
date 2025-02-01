@@ -1,4 +1,4 @@
-# Lion Optimizer Implementation 🦁
+# 🦁 Lion Optimizer Implementation
 
 This repository contains an implementation of the **Lion optimizer** (EvoLved Sign Momentum) as described in the paper [*"Lion: A New Optimization Algorithm for Training Deep Neural Networks"*](https://arxiv.org/abs/2302.06675). Lion is a novel optimization algorithm that combines the benefits of both adaptive and momentum-based optimizers, offering improved performance and efficiency in training deep neural networks.
 
