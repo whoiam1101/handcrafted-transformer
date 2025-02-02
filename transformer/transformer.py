@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch import Tensor
 
@@ -50,32 +51,8 @@ class Transformer(nn.Module):
         tgt_mask: Tensor | None = None
     ) -> Tensor:
         encoder_out = self.encoder(src, src_mask)
-        output = self.decoder(tgt, encoder_out, src_mask, tgt_mask)
-        return output
-
-    def predict(
-        self,
-        src: Tensor,
-        max_len: int,
-        sos_token: int = 2,
-        eos_token: int = 3
-    ) -> list[int]:
-        self.eval()
-        src_mask = None
-        encoder_out = self.encoder(src, src_mask)
-        preds = []
-        tgt = torch.tensor([[sos_token]])
-
-        for _ in range(max_len):
-            tgt_mask = None
-            output = self.decoder(tgt, encoder_out, src_mask, tgt_mask)
-            next_token = output.argmax(-1)[:, -1]
-            preds.append(next_token.item())
-            if next_token.item() == eos_token:
-                break
-            tgt = torch.cat([tgt, next_token.unsqueeze(0)], dim=1)
-
-        return preds
+        decoder_out = self.decoder(tgt, encoder_out, src_mask, tgt_mask)
+        return decoder_out
 
 
 Transformer.__doc__ = """
