@@ -34,6 +34,7 @@ class DecoderLayer(nn.Module):
         x = self.norm1(x)
 
         attention = self.cross_attention(x, encoder_out, encoder_out, src_mask)
+        x = x + self.dropout2(attention)
         x = self.norm2(x)
 
         ff_out = self.ff(x)
