@@ -85,8 +85,9 @@ class Transformer(nn.Module):
             return []
             
         generated_seq = [sos_token]
+        device = next(self.parameters()).device
         for _ in range(max_len):
-            tgt = torch.LongTensor(generated_seq).unsqueeze(0)
+            tgt = torch.LongTensor(generated_seq).unsqueeze(0).to(device)
             out = self.decoder(tgt, encoder_out, src_mask)
             probs = F.softmax(out[0, -1] / temperature, dim=0)
             next_token = torch.multinomial(probs, 1).item()
@@ -96,6 +97,7 @@ class Transformer(nn.Module):
                 break
                     
         return generated_seq
+
 
 Transformer.__doc__ = """
 Transformer model for sequence-to-sequence tasks.
