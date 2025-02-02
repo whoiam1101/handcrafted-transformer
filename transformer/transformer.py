@@ -54,6 +54,48 @@ class Transformer(nn.Module):
         decoder_out = self.decoder(tgt, encoder_out, src_mask, tgt_mask)
         return decoder_out
 
+    @torch.no_grad()
+    def generate(
+        self,
+        sos_token: int,
+        eos_token: int,
+        temperature: float = 1.0,
+        max_len: int = 100,
+        src: Tensor | None = None,
+        src_mask: Tensor | None = None
+    ) -> list[int]:
+        """Generate a sequence from the model.
+        
+        Args:
+            sos_token: Start of sequence token
+            eos_token: End of sequence token
+            temperature: Sampling temperature (1.0 = greedy)
+            max_len: Maximum length of generated sequence
+            src: Source sequence (optional)
+            src_mask: Source mask (optional)
+            
+        Returns:
+            List of token indices
+        """
+        self.eval()
+
+        if src is not None:
+            encoder_out = self.encoder(src, src_mask)
+        else:
+            return []
+            
+        generated_seq = [sos_token]
+        for _ in range(max_len):
+            tgt = torch.LongTensor(generated_seq).unsqueeze(0)
+            out = self.decoder(tgt, encoder_out, src_mask)
+            probs = F.softmax(out[0, -1] / temperature, dim=0)
+            next_token = torch.multinomial(probs, 1).item()
+            generated_seq.append(next_token)
+            
+            if next_token == eos_token:
+                break
+                    
+        return generated_seq
 
 Transformer.__doc__ = """
 Transformer model for sequence-to-sequence tasks.
