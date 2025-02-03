@@ -3,13 +3,16 @@ import torch
 from pathlib import Path
 
 
+__all__ = ["EarlyStopping"]
+
+
 class EarlyStopping:
     """Early stopping to stop training when validation loss doesn't improve."""
     def __init__(
         self,
         patience: int = 3,
         verbose: bool = False,
-        path: Path | str = 'checkpoints/checkpoint.pt',
+        path: Path | str = "checkpoints/checkpoint.pt",
         delta: float = 0
     ):
         """
