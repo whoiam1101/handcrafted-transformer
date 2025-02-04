@@ -99,7 +99,7 @@ class Trainer:
             self.eval_loss_history.append(eval_loss)
             self.eval_metrics_history.append(eval_metrics)
 
-            if self.checkpoint_dir:
+            if self.checkpoint_path:
                 self.save_checkpoint(epoch, global_step)
 
             print(
@@ -134,7 +134,7 @@ class Trainer:
 
     def save_checkpoint(self, epoch: int, global_step: int) -> None:
         checkpoint_path = (
-            self.checkpoint_dir / f"checkpoint_epoch_{epoch}_step_{global_step}.pt"
+            self.checkpoint_path / f"checkpoint_epoch_{epoch}_step_{global_step}.pt"
         )
         torch.save(
             {
