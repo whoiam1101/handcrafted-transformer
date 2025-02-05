@@ -104,10 +104,10 @@ class Trainer:
                 self.save_checkpoint(epoch, global_step)
 
             print(
-                f"Epoch {epoch + 1}/{self.num_epochs} |
-                Train Loss: {epoch_loss:.4f} |
-                Eval Loss: {eval_loss:.4f} |
-                Eval Metrics: {eval_metrics}"
+                f"Epoch {epoch + 1}/{self.num_epochs} | " +
+                f"Train Loss: {epoch_loss:.4f} | " +
+                f"Eval Loss: {eval_loss:.4f} | " +
+                f"Eval Metrics: {eval_metrics}"
             )
 
     @torch.no_grad()
