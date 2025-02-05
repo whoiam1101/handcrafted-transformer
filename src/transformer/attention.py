@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from math import sqrt
 from torch import Tensor
 
 
@@ -12,7 +13,7 @@ def scaled_dot_product_attention(
     mask: Tensor = None
 ) -> Tensor:
     d = query.size(-1)
-    scores = torch.matmul(query, key.transpose(-2, -1)) / torch.sqrt(d)
+    scores = torch.matmul(query, key.transpose(-2, -1)) / sqrt(d)
     if mask is not None:
         scores.masked_fill_(mask == 0, float("-inf"))
     attention_out = F.softmax(scores, dim=-1)
