@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from typing import Callable
 from torch import DeviceObjType
 from torch.optim import Optimizer
 from torch.utils.data import Dataset, DataLoader
@@ -16,8 +17,8 @@ class Trainer:
         batch_size: int,
         train_dataset: Dataset,
         eval_dataset: Dataset,
-        loss_fn: callable,
-        metrics_fn: callable,
+        loss_fn: Callable,
+        metrics_fn: Callable,
         optimizer: Optimizer,
         optimizer_kwargs: dict[str, any],
         device: DeviceObjType | None = None,
