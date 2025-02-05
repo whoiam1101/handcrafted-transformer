@@ -3,9 +3,6 @@ from nltk.translate.chrf_score import sentence_chrf
 from nltk.metrics import f_measure
 
 
-__all__ = ["compute_metrics"]
-
-
 def compute_metrics(references: list[list[str]], hypothesis: list[str]) -> dict[str, float]:
     """
     Compute BLEU, chrF, and F1 scores for translation quality.

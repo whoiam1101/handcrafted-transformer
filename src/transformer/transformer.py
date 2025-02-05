@@ -8,9 +8,6 @@ from .encoder import Encoder
 from .decoder import Decoder
 
 
-__all__ = ["Transformer"]
-
-
 class Transformer(nn.Module):
     def __init__(
         self,
