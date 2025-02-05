@@ -28,9 +28,10 @@ class MultiHeadAttention(nn.Module):
         self.d_head = d_model // num_heads
         self.num_heads = num_heads
 
-        self.query = nn.Linear(d_model, d_model)
-        self.key = nn.Linear(d_model, d_model)
-        self.value = nn.Linear(d_model, d_model)
+        self.query_fn = nn.Linear(d_model, d_model, bias=False)
+        self.key_fn = nn.Linear(d_model, d_model, bias=False)
+        self.value_fn = nn.Linear(d_model, d_model, bias=False)
+
         self.final_layer = nn.Linear(d_model, d_model)
 
     def forward(
@@ -38,19 +39,19 @@ class MultiHeadAttention(nn.Module):
         query: Tensor,
         key: Tensor,
         value: Tensor,
-        mask: Tensor = None
+        mask: Tensor | None = None
     ) -> Tensor:
         batch_size = query.size(0)
 
-        Q = self.query(query)
-        K = self.key(key)
-        V = self.value(value)
+        Q = self.query_fn(query)
+        K = self.key_fn(key)
+        V = self.value_fn(value)
 
         Q = Q.view(batch_size, -1, self.num_heads, self.d_head).transpose(1, 2)
         K = K.view(batch_size, -1, self.num_heads, self.d_head).transpose(1, 2)
         V = V.view(batch_size, -1, self.num_heads, self.d_head).transpose(1, 2)
 
-        attention_out = scaled_dot_product_attention(query, key, value, mask)
+        attention_out = scaled_dot_product_attention(Q, K, V, mask)
         attention_out = attention_out.transpose(1, 2).contiguous()
         attention_out = attention_out.view(batch_size, -1, self.d_model)
 
