@@ -16,7 +16,6 @@ class Lion(Optimizer):
         defaults = dict(lr=lr, betas=betas, weight_decay=weight_decay)
         super().__init__(params, defaults)
 
-    @_use_grad_for_differentiable
     def step(self, closure: Callable | None = None) -> float | None:
         self._cuda_graph_capture_health_check()
 
@@ -49,15 +48,17 @@ class Lion(Optimizer):
             if not params_with_grad:
                 continue
 
+            params_data = [p.data for p in params_with_grad]
+
             update_part1 = torch._foreach_mul(exp_avgs, beta1)
             update_part2 = torch._foreach_mul(grads, 1 - beta1)
             updates = torch._foreach_add(update_part1, update_part2)
 
             if decay_factor != 1.0:
-                torch._foreach_mul_(params_with_grad, decay_factor)
+                torch._foreach_mul_(params_data, decay_factor)
 
             sign_updates = [u.sign() for u in updates]
-            torch._foreach_add_(params_with_grad, sign_updates, alpha=-lr)
+            torch._foreach_add_(params_data, sign_updates, alpha=-lr)
 
             torch._foreach_mul_(exp_avgs, beta2)
             grad_part = torch._foreach_mul(grads, 1 - beta2)
