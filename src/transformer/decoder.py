@@ -2,15 +2,24 @@ import torch.nn as nn
 
 from torch import Tensor
 
+from .types import AttentionT
 from .attention import MultiHeadAttention
 from .feed_forward import FeedForward
 from .positional_encoding import PositionalEncoding
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.2):
-        self.self_attention = MultiHeadAttention(d_model, num_heads)
-        self.cross_attention = MultiHeadAttention(d_model, num_heads)
+    def __init__(
+        self,
+        d_model: int,
+        num_heads: int,
+        d_ff: int,
+        dropout: float = 0.2,
+        self_attention: AttentionT = MultiHeadAttention,
+        cross_attention: AttentionT = MultiHeadAttention
+    ):
+        self.self_attention = self_attention(d_model, num_heads)
+        self.cross_attention = cross_attention(d_model, num_heads)
 
         self.ff = FeedForward(d_model, d_ff)
 
@@ -29,12 +38,12 @@ class DecoderLayer(nn.Module):
         src_mask: Tensor | None = None,
         tgt_mask: Tensor | None = None,
     ) -> Tensor:
-        attention = self.self_attention(x, x, x, tgt_mask)
-        x = x + self.dropout1(attention)
+        attention_out = self.self_attention(x, x, x, tgt_mask)
+        x = x + self.dropout1(attention_out)
         x = self.norm1(x)
 
-        attention = self.cross_attention(x, encoder_out, encoder_out, src_mask)
-        x = x + self.dropout2(attention)
+        attention_out = self.cross_attention(x, encoder_out, encoder_out, src_mask)
+        x = x + self.dropout2(attention_out)
         x = self.norm2(x)
 
         ff_out = self.ff(x)
@@ -54,13 +63,22 @@ class Decoder(nn.Module):
         output_dim: int,
         max_len: int = 5000,
         dropout: float = 0.2,
+        self_attention: AttentionT = MultiHeadAttention,
+        cross_attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
         self.num_layers = num_layers
         self.embedding = nn.Embedding(output_dim, d_model)
         self.positional_encoding = PositionalEncoding(d_model, max_len)
         self.layers = nn.ModuleList([
-            DecoderLayer(d_model, num_heads, d_ff, dropout)
+            DecoderLayer(
+                d_model,
+                num_heads,
+                d_ff,
+                dropout,
+                self_attention,
+                cross_attention
+            )
             for _ in range(num_layers)
         ])
         self.norm = nn.LayerNorm(d_model)

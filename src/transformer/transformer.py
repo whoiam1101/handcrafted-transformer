@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 from torch import Tensor
 
+from .types import AttentionT
+from .attention import MultiHeadAttention
 from .encoder import Encoder
 from .decoder import Decoder
 
@@ -19,6 +21,7 @@ class Transformer(nn.Module):
         output_dim: int,
         max_len: int = 5000,
         dropout: float = 0.2,
+        attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
         self.encoder = Encoder(
@@ -28,7 +31,8 @@ class Transformer(nn.Module):
             d_ff,
             input_dim,
             max_len,
-            dropout
+            dropout,
+            attention,
         )
         self.decoder = Decoder(
             num_layers,
@@ -37,7 +41,9 @@ class Transformer(nn.Module):
             d_ff,
             output_dim,
             max_len,
-            dropout
+            dropout,
+            self_attention=attention,
+            cross_attention=attention,
         )
 
     def forward(

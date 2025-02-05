@@ -2,15 +2,23 @@ import torch.nn as nn
 
 from torch import Tensor
 
+from .types import AttentionT
 from .positional_encoding import PositionalEncoding
 from .feed_forward import FeedForward
 from .attention import MultiHeadAttention
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.2):
+    def __init__(
+        self,
+        d_model: int,
+        num_heads: int,
+        d_ff: int,
+        dropout: float = 0.2,
+        attention: AttentionT = MultiHeadAttention
+    ):
         super().__init__()
-        self.attention_fn = MultiHeadAttention(d_model, num_heads)
+        self.attention_fn = attention(d_model, num_heads)
         self.ff = FeedForward(d_model, d_ff)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
@@ -39,12 +47,13 @@ class Encoder(nn.Module):
         input_dim: int,
         max_len: int = 5000,
         dropout: float = 0.2,
+        attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
         self.embedding = nn.Embedding(input_dim, d_model)
         self.positional_encoding = PositionalEncoding(d_model, max_len)
         self.layers = nn.ModuleList([
-            EncoderLayer(d_model, num_heads, d_ff, dropout)
+            EncoderLayer(d_model, num_heads, d_ff, dropout, attention)
             for _ in range(num_layers)
         ])
         self.norm = nn.LayerNorm(d_model)

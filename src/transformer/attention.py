@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from math import sqrt
 from torch import Tensor
 
+from .types import AttentionT
+
 
 def scaled_dot_product_attention(
     query: Tensor,
@@ -20,7 +22,7 @@ def scaled_dot_product_attention(
     return torch.matmul(attention_out, value)
 
 
-class MultiHeadAttention(nn.Module):
+class MultiHeadAttention(nn.Module, AttentionT):
     def __init__(self, d_model: int, num_heads: int):
         super().__init__()
         assert d_model % num_heads == 0
