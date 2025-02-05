@@ -18,6 +18,7 @@ class EncoderLayer(nn.Module):
         attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
+
         self.attention_fn = attention(d_model, num_heads)
         self.ff = FeedForward(d_model, d_ff)
         self.norm1 = nn.LayerNorm(d_model)
@@ -50,6 +51,7 @@ class Encoder(nn.Module):
         attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
+
         self.embedding = nn.Embedding(input_dim, d_model)
         self.positional_encoding = PositionalEncoding(d_model, max_len)
         self.layers = nn.ModuleList([

@@ -18,6 +18,8 @@ class DecoderLayer(nn.Module):
         self_attention: AttentionT = MultiHeadAttention,
         cross_attention: AttentionT = MultiHeadAttention
     ):
+        super().__init__()
+
         self.self_attention = self_attention(d_model, num_heads)
         self.cross_attention = cross_attention(d_model, num_heads)
 
@@ -67,6 +69,7 @@ class Decoder(nn.Module):
         cross_attention: AttentionT = MultiHeadAttention
     ):
         super().__init__()
+
         self.num_layers = num_layers
         self.embedding = nn.Embedding(output_dim, d_model)
         self.positional_encoding = PositionalEncoding(d_model, max_len)

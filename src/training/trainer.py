@@ -34,7 +34,6 @@ class Trainer:
         self.batch_size = batch_size
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.max_grad_norm = max_grad_norm
-        self.checkpoint_path = checkpoint_path
         self.log_interval = log_interval
 
         self.model = model.to(self.device)
@@ -45,10 +44,14 @@ class Trainer:
         self.optimizer = optimizer(self.model.parameters(), **optimizer_kwargs)
 
         self.train_dataloader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True
         )
         self.eval_dataloader = DataLoader(
-            eval_dataset, batch_size=batch_size, shuffle=False
+            eval_dataset,
+            batch_size=batch_size,
+            shuffle=False
         )
 
         self.train_loss_history = []
@@ -56,8 +59,15 @@ class Trainer:
         self.train_metrics_history = []
         self.eval_metrics_history = []
 
+        self.checkpoint_path = checkpoint_path
+        if isinstance(self.checkpoint_path, str):
+            self.checkpoint_path = Path(self.checkpoint_path)
+
         if self.checkpoint_path:
             self.checkpoint_path.mkdir(parents=True, exist_ok=True)
+        else:
+            import os
+            self.checkpoint_path = Path(os.getcwd())
 
     def train(self) -> None:
         self.model.train()
@@ -68,7 +78,8 @@ class Trainer:
             self.model.train()
 
             progress_bar = tqdm(
-                self.train_dataloader, desc=f"Epoch {epoch + 1}/{self.num_epochs}"
+                self.train_dataloader,
+                desc=f"Epoch {epoch + 1}/{self.num_epochs}"
             )
             for step, batch in enumerate(progress_bar):
                 batch = {k: v.to(self.device) for k, v in batch.items()}

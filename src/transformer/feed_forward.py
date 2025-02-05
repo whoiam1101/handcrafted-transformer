@@ -2,7 +2,7 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from .swiglu import swiglu
+from .swiglu import SwiGLU
 
 
 class FeedForward(nn.Module):
@@ -10,7 +10,7 @@ class FeedForward(nn.Module):
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(d_model, d_ff),
-            swiglu,
+            SwiGLU(),
             nn.Linear(d_ff, d_model)
         )
 
