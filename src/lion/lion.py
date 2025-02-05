@@ -4,9 +4,6 @@ from torch import Tensor
 from torch.optim.optimizer import Optimizer, ParamsT, _use_grad_for_differentiable
 
 
-__all__ = ["Lion"]
-
-
 class Lion(Optimizer):
     def __init__(
         self,
