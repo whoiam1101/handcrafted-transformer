@@ -2,6 +2,7 @@ import torch
 
 from torch import Tensor
 from torch.optim.optimizer import Optimizer, ParamsT, _use_grad_for_differentiable
+from typing import Callable
 
 
 class Lion(Optimizer):
@@ -16,7 +17,7 @@ class Lion(Optimizer):
         super().__init__(params, defaults)
 
     @_use_grad_for_differentiable
-    def step(self, closure: callable | None = None) -> float | None:
+    def step(self, closure: Callable | None = None) -> float | None:
         self._cuda_graph_capture_health_check()
 
         loss = None
