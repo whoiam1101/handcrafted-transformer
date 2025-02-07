@@ -15,10 +15,6 @@ def scaled_dot_product_attention(
     d = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / sqrt(d)
     if mask is not None:
-        # if mask.dim() == 2:
-        #    mask.unsqueeze_(1).unsqueeze_(1)
-        # elif mask.dim() == 3:
-        #    mask.unsqueeze_(1)
         scores.masked_fill_(mask == 0, float("-inf"))
     attention_out = F.softmax(scores, dim=-1)
     return torch.matmul(attention_out, value)
