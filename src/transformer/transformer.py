@@ -64,20 +64,35 @@ class Transformer(nn.Module):
         temperature: float = 1.0,
         max_len: int = 100,
         src: Tensor | None = None,
-        src_mask: Tensor | None = None
+        src_mask: Tensor | None = None,
+        top_k: int | None = None,
+        top_p: float | None = None
     ) -> list[int]:
-        """Generate a sequence from the model.
+        """
+        Generate a sequence from the model using autoregressive decoding.
 
         Args:
-            sos_token: Start of sequence token
-            eos_token: End of sequence token
-            temperature: Sampling temperature (1.0 = greedy)
-            max_len: Maximum length of generated sequence
-            src: Source sequence (optional)
-            src_mask: Source mask (optional)
+            sos_token (int): Start-of-sequence token. The generation starts with this token.
+            eos_token (int): End-of-sequence token. The generation stops when this token is produced.
+            temperature (float, optional): Sampling temperature. Higher values increase randomness,
+                while lower values make the model more deterministic. Default is 1.0.
+            max_len (int, optional): Maximum length of the generated sequence. Default is 100.
+            src (Tensor, optional): Source input tensor of shape (batch_size, src_seq_len). If provided,
+                the encoder output is used as context for the decoder. Default is None.
+            src_mask (Tensor, optional): Source mask tensor of shape (batch_size, src_seq_len). If provided,
+                it masks out padding tokens in the source sequence. Default is None.
+            top_k (int, optional): If set, restricts sampling to the top-k tokens with the highest probabilities.
+                Default is None.
+            top_p (float, optional): If set, uses nucleus sampling (top-p sampling) with the given cumulative
+                probability threshold. Default is None.
 
         Returns:
-            List of token indices
+            List[int]: A list of generated token indices, including the start-of-sequence token (sos_token)
+                and ending with the end-of-sequence token (eos_token) if it is generated within `max_len`.
+
+        Notes:
+            - If both `top_k` and `top_p` are provided, `top_k` takes precedence.
+            - If neither `top_k` nor `top_p` is provided, the model samples from the full distribution.
         """
         self.eval()
 
@@ -88,12 +103,31 @@ class Transformer(nn.Module):
 
         generated_seq = [sos_token]
         device = next(self.parameters()).device
+
         for _ in range(max_len):
-            tgt = torch.LongTensor(generated_seq).unsqueeze(0).to(device)
+            tgt = torch.tensor(generated_seq, dtype=torch.long, device=device).unsqueeze(0)
             out = self.decoder(tgt, encoder_out, src_mask)
-            probs = F.softmax(out[0, -1] / temperature, dim=0)
-            next_token = torch.multinomial(probs, 1).item()
-            generated_seq.append(next_token)
+            logits = out[0, -1] / temperature
+            probs = F.softmax(logits, dim=0)
+
+            next_token = -1
+            if top_k is not None:
+                top_k_probs, top_k_idxs = torch.topk(probs, top_k)
+                top_k_probs /= top_k_probs.sum()
+                next_token_idx = torch.multinomial(top_k_probs, 1).item()
+                next_token = top_k_idxs[next_token_idx]
+            elif top_p is not None:
+                sorted_probs, sorted_idxs = torch.sort(probs, descending=True)
+                cumulative_probs = torch.cumsum(sorted_probs, dim=0)
+                cutoff_index = torch.searchsorted(cumulative_probs, top_p, right=True).item()
+                truncated_probs = sorted_probs[:cutoff_index + 1]
+                truncated_probs /= truncated_probs.sum()
+                next_token_idx = torch.multinomial(truncated_probs, 1)
+                next_token = sorted_idxs[next_token_idx]
+            else:
+                next_token = torch.multinomial(probs, num_samples=1).item()
+
+            generated_seq.append(int(next_token))
 
             if next_token == eos_token:
                 break
@@ -113,6 +147,7 @@ Args:
     output_dim (int): Dimensionality of the output.
     max_len (int, optional): Maximum length of the input sequences. Default is 5000.
     dropout (float, optional): Dropout rate. Default is 0.2.
+    attention (nn.Module, optional): Attention module to use. Default is MultiHeadAttention.
 
 Attributes:
     encoder (Encoder): Encoder part of the transformer.
@@ -121,23 +156,29 @@ Attributes:
 Methods:
     forward(src, tgt, src_mask=None, tgt_mask=None):
         Forward pass through the transformer.
-        Args:
-            src (Tensor): Source input tensor.
-            tgt (Tensor): Target input tensor.
-            src_mask (Tensor, optional): Source mask tensor. Default is None.
-            tgt_mask (Tensor, optional): Target mask tensor. Default is None.
-        Returns:
-            Tensor: Output tensor from the decoder.
 
-    generate(sos_token, eos_token, temperature=1.0, max_len=100, src=None, src_mask=None):
-        Generate a sequence from the model.
+        Args:
+            src (Tensor): Source input tensor of shape (batch_size, src_seq_len).
+            tgt (Tensor): Target input tensor of shape (batch_size, tgt_seq_len).
+            src_mask (Tensor, optional): Source mask tensor of shape (batch_size, src_seq_len). Default is None.
+            tgt_mask (Tensor, optional): Target mask tensor of shape (batch_size, tgt_seq_len). Default is None.
+
+        Returns:
+            Tensor: Output tensor from the decoder of shape (batch_size, tgt_seq_len, output_dim).
+
+    generate(sos_token, eos_token, temperature=1.0, max_len=100, src=None, src_mask=None, top_k=None, top_p=None):
+        Generate a sequence from the model using autoregressive decoding.
+
         Args:
             sos_token (int): Start-of-sequence token.
             eos_token (int): End-of-sequence token.
-            temperature (float, optional): Sampling temperature. Defaults to 1.0.
-            max_len (int, optional): Maximum length of the generated sequence. Defaults to 100.
-            src (Tensor, optional): Source input tensor. Defaults to None.
-            src_mask (Tensor, optional): Source mask tensor. Defaults to None.
+            temperature (float, optional): Sampling temperature. Higher values increase randomness. Default is 1.0.
+            max_len (int, optional): Maximum length of the generated sequence. Default is 100.
+            src (Tensor, optional): Source input tensor of shape (batch_size, src_seq_len). Default is None.
+            src_mask (Tensor, optional): Source mask tensor of shape (batch_size, src_seq_len). Default is None.
+            top_k (int, optional): If set, restricts sampling to the top-k tokens. Default is None.
+            top_p (float, optional): If set, uses nucleus sampling with cumulative probability threshold. Default is None.
+
         Returns:
             List[int]: List of generated token indices.
 """
