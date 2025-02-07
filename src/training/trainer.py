@@ -17,6 +17,7 @@ class Trainer:
         batch_size: int,
         train_dataset: Dataset,
         eval_dataset: Dataset,
+        collate_fn: Callable,
         loss_fn: Callable,
         metrics_fn: Callable,
         optimizer: Optimizer,
@@ -46,12 +47,14 @@ class Trainer:
         self.train_dataloader = DataLoader(
             train_dataset,
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
+            collate_fn=collate_fn
         )
         self.eval_dataloader = DataLoader(
             eval_dataset,
             batch_size=batch_size,
-            shuffle=False
+            shuffle=False,
+            collate_fn=collate_fn
         )
 
         self.train_loss_history = []
