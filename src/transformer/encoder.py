@@ -2,7 +2,6 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from .types import AttentionT
 from .positional_encoding import PositionalEncoding
 from .feed_forward import FeedForward
 from .attention import MultiHeadAttention
@@ -15,7 +14,7 @@ class EncoderLayer(nn.Module):
         num_heads: int,
         d_ff: int,
         dropout: float = 0.2,
-        attention: AttentionT = MultiHeadAttention
+        attention: nn.Module = MultiHeadAttention
     ):
         super().__init__()
 
@@ -48,7 +47,7 @@ class Encoder(nn.Module):
         input_dim: int,
         max_len: int = 5000,
         dropout: float = 0.2,
-        attention: AttentionT = MultiHeadAttention
+        attention: nn.Module = MultiHeadAttention
     ):
         super().__init__()
 

@@ -4,7 +4,6 @@ import torch.nn.functional as F
 
 from torch import Tensor
 
-from .types import AttentionT
 from .attention import MultiHeadAttention
 from .encoder import Encoder
 from .decoder import Decoder
@@ -21,7 +20,7 @@ class Transformer(nn.Module):
         output_dim: int,
         max_len: int = 5000,
         dropout: float = 0.2,
-        attention: AttentionT = MultiHeadAttention
+        attention: nn.Module = MultiHeadAttention
     ):
         super().__init__()
         self.encoder = Encoder(
@@ -68,7 +67,7 @@ class Transformer(nn.Module):
         src_mask: Tensor | None = None
     ) -> list[int]:
         """Generate a sequence from the model.
-        
+
         Args:
             sos_token: Start of sequence token
             eos_token: End of sequence token
@@ -76,7 +75,7 @@ class Transformer(nn.Module):
             max_len: Maximum length of generated sequence
             src: Source sequence (optional)
             src_mask: Source mask (optional)
-            
+
         Returns:
             List of token indices
         """
@@ -86,7 +85,7 @@ class Transformer(nn.Module):
             encoder_out = self.encoder(src, src_mask)
         else:
             return []
-            
+
         generated_seq = [sos_token]
         device = next(self.parameters()).device
         for _ in range(max_len):
@@ -95,10 +94,10 @@ class Transformer(nn.Module):
             probs = F.softmax(out[0, -1] / temperature, dim=0)
             next_token = torch.multinomial(probs, 1).item()
             generated_seq.append(next_token)
-            
+
             if next_token == eos_token:
                 break
-                    
+
         return generated_seq
 
 
@@ -130,13 +129,15 @@ Methods:
         Returns:
             Tensor: Output tensor from the decoder.
 
-    predict(src, max_len, sos_token=2, eos_token=3):
-        Generate predictions for the given source input.
+    generate(sos_token, eos_token, temperature=1.0, max_len=100, src=None, src_mask=None):
+        Generate a sequence from the model.
         Args:
-            src (Tensor): Source input tensor.
-            max_len (int): Maximum length of the generated sequence.
-            sos_token (int, optional): Start-of-sequence token. Default is 2.
-            eos_token (int, optional): End-of-sequence token. Default is 3.
+            sos_token (int): Start-of-sequence token.
+            eos_token (int): End-of-sequence token.
+            temperature (float, optional): Sampling temperature. Defaults to 1.0.
+            max_len (int, optional): Maximum length of the generated sequence. Defaults to 100.
+            src (Tensor, optional): Source input tensor. Defaults to None.
+            src_mask (Tensor, optional): Source mask tensor. Defaults to None.
         Returns:
-            List[int]: List of predicted token indices.
+            List[int]: List of generated token indices.
 """
