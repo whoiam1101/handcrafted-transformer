@@ -1,7 +1,7 @@
 import torch
 
 from torch import Tensor
-from torch.optim.optimizer import Optimizer, ParamsT, _use_grad_for_differentiable
+from torch.optim.optimizer import Optimizer, ParamsT
 from typing import Callable
 
 
@@ -16,7 +16,7 @@ class Lion(Optimizer):
         defaults = dict(lr=lr, betas=betas, weight_decay=weight_decay)
         super().__init__(params, defaults)
 
-    def step(self, closure: Callable | None = None) -> float | None:
+    def step(self, closure: Callable[..., float] | None = None) -> float | None:
         self._cuda_graph_capture_health_check()
 
         loss = None
