@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch import Tensor
 
@@ -28,11 +29,11 @@ class EncoderLayer(nn.Module):
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         attention = self.attention_fn(x, x, x, mask)
         x = x + self.dropout1(attention)
-        x = self.norm1(x)
+        x = F.relu(self.norm1(x))
 
         ff_out = self.ff(x)
         x = x + self.dropout2(ff_out)
-        x = self.norm2(x)
+        x = F.relu(self.norm2(x))
 
         return x
 

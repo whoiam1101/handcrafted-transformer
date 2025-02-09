@@ -1,218 +1,110 @@
 import torch
 import torch.nn as nn
 
-from typing import Callable
-from torch import DeviceObjType
-from torch.optim import Optimizer
-from torch.utils.data import Dataset, DataLoader
-from pathlib import Path
+from torch.optim import Optimizer, Adam
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+from pathlib import Path
+from typing import Callable, Any
 
 
-class Trainer:
-    def __init__(
-        self,
-        model: nn.Module,
-        num_epochs: int,
-        batch_size: int,
-        train_dataset: Dataset,
-        eval_dataset: Dataset,
-        loss_fn: Callable,
-        metrics_fn: Callable,
-        optimizer: Optimizer,
-        optimizer_kwargs: dict[str, any],
-        device: DeviceObjType | None = None,
-        collate_fn: Callable | None = None,
-        gradient_accumulation_steps: int = 1,
-        max_grad_norm: float = 1.0,
-        checkpoint_path: Path | str | None = None,
-        log_interval: int = 10,
-    ):
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
-        self.num_epochs = num_epochs
-        self.batch_size = batch_size
-        self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.max_grad_norm = max_grad_norm
-        self.log_interval = log_interval
+def train_transformer(
+    model: nn.Module,
+    train_dataloader: DataLoader,
+    val_dataloader: DataLoader,
+    num_epochs: int,
+    optimizer_class: Optimizer = Adam,
+    optimizer_kwargs: dict[str, Any] | None = None,
+    pad_idx: int = 0,
+    device: torch.device | None = None,
+    save_dir: Path | None = None,
+    max_grad_norm: float = 1.0,
+    metrics_fn: Callable | None = None,
+) -> dict:
+    """
+    Train a Transformer model with a simplified setup.
 
-        self.model = model.to(self.device)
+    Args:
+        model (nn.Module): Transformer model to train.
+        train_dataloader (DataLoader): DataLoader for training data.
+        val_dataloader (DataLoader): DataLoader for validation data.
+        num_epochs (int): Number of epochs to train.
+        optimizer_class (Type[optim.Optimizer], optional): Optimizer class. Defaults to Adam.
+        optimizer_kwargs (dict, optional): Optimizer parameters. Defaults to None.
+        pad_idx (int, optional): Padding index for masking. Defaults to 0.
+        device (torch.device, optional): Device for training (CPU or GPU). Defaults to None.
+        save_dir (Optional[Path], optional): Directory to save model checkpoints. Defaults to None.
+        max_grad_norm (float, optional): Maximum gradient norm for clipping. Defaults to 1.0.
+        metrics_fn (Optional[Callable], optional): Function to compute evaluation metrics. Defaults to None.
 
-        self.loss_fn = loss_fn
-        self.metrics_fn = metrics_fn
-
-        self.optimizer = optimizer(self.model.parameters(), **optimizer_kwargs)
-
-        self.train_dataloader = DataLoader(
-            train_dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            collate_fn=collate_fn
-        )
-        self.eval_dataloader = DataLoader(
-            eval_dataset,
-            batch_size=batch_size,
-            shuffle=False,
-            collate_fn=collate_fn
-        )
-
-        self.train_loss_history = []
-        self.eval_loss_history = []
-        self.train_metrics_history = []
-        self.eval_metrics_history = []
-
-        self.checkpoint_path = checkpoint_path
-        if isinstance(self.checkpoint_path, str):
-            self.checkpoint_path = Path(self.checkpoint_path)
-
-        if self.checkpoint_path:
-            self.checkpoint_path.mkdir(parents=True, exist_ok=True)
-        else:
-            import os
-            self.checkpoint_path = Path(os.getcwd())
-
-    def train(self) -> None:
-        self.model.train()
-        global_step = 0
-
-        for epoch in range(self.num_epochs):
-            epoch_loss = 0.0
-            self.model.train()
-
-            progress_bar = tqdm(
-                self.train_dataloader,
-                desc=f"Epoch {epoch + 1}/{self.num_epochs}"
-            )
-            for step, batch in enumerate(progress_bar):
-                batch = {k: v.to(self.device) for k, v in batch.items()}
-
-                outputs = self.model(**batch)
-                loss = self.loss_fn(outputs, batch["labels"])
-                loss = loss / self.gradient_accumulation_steps
-
-                loss.backward()
-
-                if (step + 1) % self.gradient_accumulation_steps == 0:
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.max_grad_norm
-                    )
-
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
-
-                    global_step += 1
-
-                epoch_loss += loss.item() * self.gradient_accumulation_steps
-                if global_step % self.log_interval == 0:
-                    progress_bar.set_postfix({"loss": loss.item()})
-
-            epoch_loss /= len(self.train_dataloader)
-            self.train_loss_history.append(epoch_loss)
-
-            eval_loss, eval_metrics = self.evaluate()
-            self.eval_loss_history.append(eval_loss)
-            self.eval_metrics_history.append(eval_metrics)
-
-            if self.checkpoint_path:
-                self.save_checkpoint(epoch, global_step)
-
-            print(
-                f"Epoch {epoch + 1}/{self.num_epochs} | " +
-                f"Train Loss: {epoch_loss:.4f} | " +
-                f"Eval Loss: {eval_loss:.4f} | " +
-                f"Eval Metrics: {eval_metrics}"
-            )
-
-    @torch.no_grad()
-    def evaluate(self) -> tuple[float, dict[str, float]]:
-        self.model.eval()
-        total_loss = 0.0
-        all_preds, all_labels = [], []
-
-        for batch in self.eval_dataloader:
-            batch = {k: v.to(self.device) for k, v in batch.items()}
-
-            outputs = self.model(**batch)
-            loss = self.loss_fn(outputs, batch["labels"])
+    Returns:
+        dict: Training history containing losses and metrics.
+    """
+    device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    optimizer_kwargs = optimizer_kwargs or {}
+    optimizer = optimizer_class(model.parameters(), **optimizer_kwargs)
+    criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
+    
+    if save_dir:
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+    
+    history = {'train_loss': [], 'val_loss': [], 'val_metrics': []}
+    
+    def create_masks(src, tgt):
+        """Generate source and target masks for Transformer."""
+        src_mask = (src != pad_idx).unsqueeze(1).unsqueeze(2)
+        tgt_pad_mask = (tgt != pad_idx).unsqueeze(1).unsqueeze(2)
+        seq_len = tgt.size(1)
+        subsequent_mask = torch.triu(torch.ones((seq_len, seq_len), device=device), diagonal=1).bool()
+        return src_mask, tgt_pad_mask & ~subsequent_mask.unsqueeze(0)
+    
+    for epoch in range(num_epochs):
+        model.train()
+        total_loss = 0
+        train_bar = tqdm(train_dataloader, desc=f'Epoch {epoch+1}/{num_epochs}')
+        
+        for batch in train_bar:
+            src, tgt = batch['src'].to(device), batch['tgt'].to(device)
+            src_mask, tgt_mask = create_masks(src, tgt[:, :-1])
+            
+            optimizer.zero_grad()
+            outputs = model(src=src, tgt=tgt[:, :-1], src_mask=src_mask, tgt_mask=tgt_mask)
+            loss = criterion(outputs.reshape(-1, outputs.size(-1)), tgt[:, 1:].reshape(-1))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+            optimizer.step()
+            
             total_loss += loss.item()
-
-            all_preds.append(outputs.logits.argmax(dim=-1))
-            all_labels.append(batch["labels"])
-
-        all_preds = torch.cat(all_preds)
-        all_labels = torch.cat(all_labels)
-        metrics = self.metrics_fn(all_preds, all_labels)
-
-        avg_loss = total_loss / len(self.eval_dataloader)
-        return avg_loss, metrics
-
-    def save_checkpoint(self, epoch: int, global_step: int) -> None:
-        checkpoint_path = (
-            self.checkpoint_path / f"checkpoint_epoch_{epoch}_step_{global_step}.pt"
-        )
-        torch.save(
-            {
-                "epoch": epoch,
-                "global_step": global_step,
-                "model_state_dict": self.model.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
-                "train_loss_history": self.train_loss_history,
-                "eval_loss_history": self.eval_loss_history,
-                "eval_metrics_history": self.eval_metrics_history,
-            },
-            checkpoint_path,
-        )
-        print(f"Checkpoint saved at {checkpoint_path}")
-
-    def load_checkpoint(self, checkpoint_path: Path | str) -> None:
-        checkpoint = torch.load(checkpoint_path)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.train_loss_history = checkpoint["train_loss_history"]
-        self.eval_loss_history = checkpoint["eval_loss_history"]
-        self.eval_metrics_history = checkpoint["eval_metrics_history"]
-        print(f"Checkpoint loaded from {checkpoint_path}")
-
-
-Trainer.__doc__ = """
-A training wrapper class for PyTorch models.
-
-This class provides a standard training loop for PyTorch models, including support for
-evaluation, checkpoint saving/loading, gradient accumulation, and progress tracking.
-
-Args:
-    model (nn.Module): The PyTorch model to train.
-    num_epochs (int): Number of training epochs.
-    batch_size (int): Size of batches for training and evaluation.
-    train_dataset (Dataset): PyTorch Dataset for training.
-    eval_dataset (Dataset): PyTorch Dataset for evaluation.
-    loss_fn (callable): Loss function to use for training and evaluation.
-    metrics_fn (callable): Function to compute evaluation metrics.
-    optimizer (Optimizer): PyTorch optimizer class (not instance).
-    optimizer_kwargs (dict): Keyword arguments for the optimizer.
-    device (DeviceObjType, optional): Device to run the model on. Defaults to CUDA if available, else CPU.
-    gradient_accumulation_steps (int, optional): Number of steps to accumulate gradients. Defaults to 1.
-    max_grad_norm (float, optional): Maximum gradient norm for gradient clipping. Defaults to 1.0.
-    checkpoint_path (Path | str, optional): Directory to save model checkpoints. Defaults to None.
-    log_interval (int, optional): Number of steps between logging updates. Defaults to 10.
-
-Attributes:
-    train_loss_history (list): History of training losses.
-    eval_loss_history (list): History of evaluation losses.
-    eval_metrics_history (list): History of evaluation metrics.
-
-Examples:
-    >>> trainer = Trainer(
-    ...     model=my_model,
-    ...     num_epochs=10,
-    ...     batch_size=32,
-    ...     train_dataset=train_data,
-    ...     eval_dataset=eval_data,
-    ...     loss_fn=torch.nn.CrossEntropyLoss(),
-    ...     metrics_fn=compute_metrics,
-    ...     optimizer=torch.optim.Adam,
-    ...     optimizer_kwargs={'lr': 0.001}
-    ... )
-    >>> trainer.train()
-"""
+            train_bar.set_postfix({'loss': loss.item()})
+        
+        avg_train_loss = total_loss / len(train_dataloader)
+        history['train_loss'].append(avg_train_loss)
+        
+        model.eval()
+        total_val_loss = 0
+        all_preds, all_targets = [], []
+        
+        with torch.no_grad():
+            for batch in tqdm(val_dataloader, desc='Validation'):
+                src, tgt = batch['src'].to(device), batch['tgt'].to(device)
+                src_mask, tgt_mask = create_masks(src, tgt[:, :-1])
+                outputs = model(src=src, tgt=tgt[:, :-1], src_mask=src_mask, tgt_mask=tgt_mask)
+                loss = criterion(outputs.reshape(-1, outputs.size(-1)), tgt[:, 1:].reshape(-1))
+                total_val_loss += loss.item()
+                if metrics_fn:
+                    preds = torch.argmax(outputs, dim=-1)
+                    all_preds.append(preds)
+                    all_targets.append(tgt[:, 1:])
+        
+        avg_val_loss = total_val_loss / len(val_dataloader)
+        history['val_loss'].append(avg_val_loss)
+        
+        if metrics_fn:
+            all_preds, all_targets = torch.cat(all_preds), torch.cat(all_targets)
+            history['val_metrics'].append(metrics_fn(all_preds, all_targets))
+        
+        print(f'Epoch {epoch + 1}/{num_epochs}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
+    
+    return history

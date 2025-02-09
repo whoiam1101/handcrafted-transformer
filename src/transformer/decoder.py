@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch import Tensor
 
@@ -41,15 +42,15 @@ class DecoderLayer(nn.Module):
     ) -> Tensor:
         attention_out = self.self_attention(x, x, x, tgt_mask)
         x = x + self.dropout1(attention_out)
-        x = self.norm1(x)
+        x = F.relu(self.norm1(x))
 
         attention_out = self.cross_attention(x, encoder_out, encoder_out, src_mask)
         x = x + self.dropout2(attention_out)
-        x = self.norm2(x)
+        x = F.relu(self.norm2(x))
 
         ff_out = self.ff(x)
         x = x + self.dropout3(ff_out)
-        x = self.norm3(x)
+        x = F.relu(self.norm3(x))
 
         return x
 
