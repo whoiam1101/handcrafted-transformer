@@ -106,5 +106,6 @@ def train_transformer(
             history['val_metrics'].append(metrics_fn(all_preds, all_targets))
         
         print(f'Epoch {epoch + 1}/{num_epochs}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
-    
+        print(f'Val metrics: {history['val_metrics'][-1]}')
+
     return history
