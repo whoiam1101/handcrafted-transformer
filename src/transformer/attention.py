@@ -12,12 +12,40 @@ def scaled_dot_product_attention(
     value: Tensor,
     mask: Tensor | None = None
 ) -> Tensor:
-    d = query.size(-1)
-    scores = query @ key.transpose(-2, -1) / sqrt(d)
+    d_model = query.size(-1)
+    scores = query @ key.transpose(-2, -1) / sqrt(d_model)
     if mask is not None:
         scores = scores.masked_fill(mask == 0, float("-inf"))
     attention_out = F.softmax(scores, dim=-1)
     return attention_out @ value
+
+
+def sparse_attention(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    window_size: int,
+    mask: Tensor | None = None
+) -> Tensor:
+    seq_len, d_model = query.shape[-2:]
+    output = torch.zeros_like(query)
+    
+    for idx in range(seq_len):
+        start = max(0, idx - window_size)
+        end = min(seq_len, idx + window_size + 1)
+        
+        Q = query[:, idx:idx+1, :]
+        K = key[:, start:end, :]
+        V = value[:, start:end, :]
+
+        scores = Q @ K.transpose(-2, -1) / sqrt(d_model)
+        if mask is not None:
+            local_mask = mask[:, idx:idx+1, start:end]
+            scores = scores.masked_fill(local_mask == 0, float("-inf"))
+        attention_out = F.softmax(scores, dim=-1)
+        output[:, idx:idx+1, :] = attention_out @ V
+    
+    return output
 
 
 class MultiHeadAttention(nn.Module):
